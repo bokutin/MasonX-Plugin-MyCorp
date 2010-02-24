@@ -1,5 +1,6 @@
 package MasonX::Plugin::MyCorp;
 
+use strict;
 use base qw(HTML::Mason::Plugin);
 
 use Config;
@@ -33,6 +34,7 @@ sub end_request_hook {
             Symbol::Util::delete_glob("HTML::Mason::Commands::$name", @slots);
         }
         else {
+            no strict 'refs';
             delete ${"HTML::Mason::Commands::"}{$name};
         }
     }
@@ -40,28 +42,13 @@ sub end_request_hook {
     local $ModPerl::Util::DEFAULT_UNLOAD_METHOD = "unload_package_xs";
     my $data_dir = $m->interp->data_dir;
     while ( my ($key, $file) = each %INC ) {
-        next if _is_local_pm($data_dir, $file);
+        next unless $file;
+        next if $file =~ m/^$Config{installprefix}/;
+        next if $file =~ m/^$data_dir/;
 
-        #use Module::Extract::Namespaces;
-        #my @namespaces = Module::Extract::Namespaces->from_file($file);
-        open(my $fh, "<", $file) or do { warn "open file $file failed."; next };
-        my @namespaces = map { m/package\s+(\S+);/ ? $1 : () } <$fh>;
-
-        for my $ns (@namespaces) {
-            my $loc = Module::Loaded::is_loaded($ns);
-            ModPerl::Util::unload_package($ns) if _is_local_pm($data_dir, $loc);
-        }
+        my $pkg = join("::", File::Spec->splitdir( $key =~ m/^(.*)\.pm$/ ) );
+        ModPerl::Util::unload_package($pkg);
     }
-}
-
-sub _is_local_pm {
-    my ($data_dir, $file) = @_;
-
-    return unless $file;
-    return if $file =~ m/^$Config{installprefix}/;
-    return if $file =~ m/^$data_dir/;
-
-    return 1;
 }
 
 1;
