@@ -14,14 +14,14 @@ sub start_component_hook {
 
     my $m = $context->request;
 
-    unless ( $m->notes->{_first_comp_dir} ) {
+    $m->notes->{_first_comp_dir} ||= do {
         my $comp = $m->callers(-1);
         my $dir  = $comp->source_dir;
         chdir($dir);
         unshift @INC, File::Spec->catdir($dir, "lib");
 
-        $m->notes->{_first_comp_dir} = $dir;
-    }
+        $dir;
+    };
 }
 
 sub end_request_hook {
