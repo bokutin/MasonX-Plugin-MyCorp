@@ -1,0 +1,23 @@
+---
+abstract: ~
+author: ~
+build_requires:
+  ExtUtils::MakeMaker: 6.42
+configure_requires:
+  ExtUtils::MakeMaker: 6.42
+distribution_type: module
+generated_by: 'Module::Install version 0.91'
+license: unknown
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4
+name: MasonX-Plugin-MyCorp
+no_index:
+  directory:
+    - inc
+requires:
+  HTML::Mason: 0
+  ModPerl::Util: 0
+  Module::Loaded: 0
+  Symbol::Util: 0
+version: undef

@@ -1,0 +1,16 @@
+そのうち書くずら。
+
+autohandlerの<%filter>でTemplate::Semanticさまを使うと、良いかもしれねい。
+
+    PerlModule CGI
+    PerlModule HTML::Mason::ApacheHandler
+
+    PerlSetVar  MasonCompRoot  "main  => /opt/local/apache2/htdocs"
+    PerlSetVar  MasonCompRoot  "users => /Users"
+    PerlSetVar  MasonCodeCacheMaxSize 0
+    PerlSetVar  MasonPlugins   MasonX::Plugin::MyCorp
+
+    <FilesMatch "\.mas$">
+	SetHandler perl-script
+	PerlResponseHandler HTML::Mason::ApacheHandler
+    </FilesMatch>
