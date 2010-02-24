@@ -12,13 +12,15 @@ use Symbol::Util ();
 sub start_component_hook {
     my ($self, $context) = @_;
 
-    my $m     = $context->request;
-    my $first = $m->callers(-1);
-    my $cur   = $context->comp;
+    my $m = $context->request;
 
-    if ( $first eq $cur ) {
-        chdir( $first->source_dir );
-        unshift @INC, File::Spec->catdir($first->source_dir, "lib");
+    unless ( $m->notes->{_first_comp_dir} ) {
+        my $comp = $m->callers(-1);
+        my $dir  = $comp->source_dir;
+        chdir($dir);
+        unshift @INC, File::Spec->catdir($dir, "lib");
+
+        $m->notes->{_first_comp_dir} = $dir;
     }
 }
 
@@ -40,11 +42,9 @@ sub end_request_hook {
     }
 
     local $ModPerl::Util::DEFAULT_UNLOAD_METHOD = "unload_package_xs";
-    my $data_dir = $m->interp->data_dir;
+    my $dir = $m->notes->{_first_comp_dir};
     while ( my ($key, $file) = each %INC ) {
-        next unless $file;
-        next if $file =~ m/^$Config{installprefix}/;
-        next if $file =~ m/^$data_dir/;
+        next if !defined $file or $file !~ m/^$dir/;
 
         my $pkg = join("::", File::Spec->splitdir( $key =~ m/^(.*)\.pm$/ ) );
         ModPerl::Util::unload_package($pkg);
