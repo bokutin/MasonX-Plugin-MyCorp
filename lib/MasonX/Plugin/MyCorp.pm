@@ -40,7 +40,7 @@ sub end_request_hook {
     local $ModPerl::Util::DEFAULT_UNLOAD_METHOD = "unload_package_xs";
     my $data_dir = $m->interp->data_dir;
     while ( my ($key, $file) = each %INC ) {
-        next if _is_local_pm($file);
+        next if _is_local_pm($data_dir, $file);
 
         #use Module::Extract::Namespaces;
         #my @namespaces = Module::Extract::Namespaces->from_file($file);
@@ -49,13 +49,13 @@ sub end_request_hook {
 
         for my $ns (@namespaces) {
             my $loc = Module::Loaded::is_loaded($ns);
-            ModPerl::Util::unload_package($ns) if _is_local_pm($loc);
+            ModPerl::Util::unload_package($ns) if _is_local_pm($data_dir, $loc);
         }
     }
 }
 
 sub _is_local_pm {
-    my $file = shift;
+    my ($data_dir, $file) = @_;
 
     return unless $file;
     return if $file =~ m/^$Config{installprefix}/;
