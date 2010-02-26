@@ -3,10 +3,8 @@ package MasonX::Plugin::MyCorp;
 use strict;
 use base qw(HTML::Mason::Plugin);
 
-use Config;
 use File::Spec ();
 use ModPerl::Util;
-use Module::Loaded ();
 use Symbol::Util ();
 
 sub start_component_hook {
@@ -17,8 +15,19 @@ sub start_component_hook {
     $m->notes->{_first_comp_dir} ||= do {
         my $comp = $m->callers(-1);
         my $dir  = $comp->source_dir;
+	my $lib  = File::Spec->catdir($dir, "lib");
+
         chdir($dir);
-        unshift @INC, File::Spec->catdir($dir, "lib");
+        unshift @INC, $lib;
+
+	my $r = $m->apache_req;
+        #$r->dir_config( ReloadDebug => "off" );
+	$r->dir_config( ReloadAll => "on" );
+	$r->dir_config( ReloadDirectories => $lib );
+
+	local $ModPerl::Util::DEFAULT_UNLOAD_METHOD = "unload_package_xs";
+	require Apache2::Reload;
+	Apache2::Reload::handler($r);
 
         $dir;
     };
@@ -39,15 +48,6 @@ sub end_request_hook {
             no strict 'refs';
             delete ${"HTML::Mason::Commands::"}{$name};
         }
-    }
-
-    local $ModPerl::Util::DEFAULT_UNLOAD_METHOD = "unload_package_xs";
-    my $dir = $m->notes->{_first_comp_dir};
-    while ( my ($key, $file) = each %INC ) {
-        next if !defined $file or $file !~ m/^$dir/;
-
-        my $pkg = join("::", File::Spec->splitdir( $key =~ m/^(.*)\.pm$/ ) );
-        ModPerl::Util::unload_package($pkg);
     }
 }
 
